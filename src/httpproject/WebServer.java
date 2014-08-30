@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -34,6 +35,7 @@ public class WebServer {
         try {
             HttpServer server = HttpServer.create(new InetSocketAddress(ip, 8014), 0);
             server.createContext("/", new DefaultHandler());
+            server.createContext("/math", new MathHandler());
             server.setExecutor(null);
             server.start();
         } catch (IOException ex) {
@@ -56,6 +58,26 @@ public class WebServer {
         }
     }
 
+    static class MathHandler implements HttpHandler {
+
+        @Override
+        public void handle(HttpExchange he) throws IOException {
+            String response = "hello";
+            String mathString = he.getRequestURI().toString().substring(5);
+            System.out.println(mathString);
+            StringBuilder b = new StringBuilder();
+            b.append("The result is: ");
+            b.append(WebMath.getResult(mathString));
+            response = b.toString();
+            
+            he.sendResponseHeaders(200, response.length());
+            try (PrintWriter pw = new PrintWriter(he.getResponseBody())) {
+                pw.print(response);
+            }
+        }
+
+    }
+
     static class DefaultHandler implements HttpHandler {
 
         String fileFolder = "public/";
@@ -63,22 +85,33 @@ public class WebServer {
         @Override
         public void handle(HttpExchange he) throws IOException {
 
-            String requestPath = he.getRequestURI().toString();
-            System.out.println("Request URL: " + requestPath);
+            String requestPath = he.getRequestURI().getPath();
+
             String[] tmp = requestPath.split("\\.");
-            String contentType = tmp[tmp.length-1];
-            System.out.println("Content type: "+contentType);
+            String contentType = tmp[tmp.length - 1];
+             if(requestPath.equals("/".trim())){
+                requestPath = "index.html";
+                contentType = "html";
+            }
+            
+            System.out.println("Request URL: " + requestPath);
+            System.out.println("Content type: " + contentType);
+    
+            
+           
+
+            
             File file = new File(fileFolder + requestPath);
             byte[] bytesToSend = new byte[(int) file.length()];
             try {
                 BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
                 bis.read(bytesToSend, 0, bytesToSend.length);
             } catch (Exception e) {
-
+                e.printStackTrace();
             }
 
             Headers h = he.getResponseHeaders();
-            h.add("content-type", "text/"+contentType);
+            h.add("content-type", "text/" + contentType);
             he.sendResponseHeaders(200, bytesToSend.length);
             try (OutputStream os = he.getResponseBody()) {
                 os.write(bytesToSend);
