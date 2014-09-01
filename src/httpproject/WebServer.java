@@ -69,7 +69,7 @@ public class WebServer {
             b.append("The result is: ");
             b.append(WebMath.getResult(mathString));
             response = b.toString();
-            
+
             he.sendResponseHeaders(200, response.length());
             try (PrintWriter pw = new PrintWriter(he.getResponseBody())) {
                 pw.print(response);
@@ -89,18 +89,14 @@ public class WebServer {
 
             String[] tmp = requestPath.split("\\.");
             String contentType = tmp[tmp.length - 1];
-             if(requestPath.equals("/".trim())){
+            if (requestPath.equals("/".trim())) {
                 requestPath = "index.html";
                 contentType = "html";
             }
-            
+
             System.out.println("Request URL: " + requestPath);
             System.out.println("Content type: " + contentType);
-    
-            
-           
 
-            
             File file = new File(fileFolder + requestPath);
             byte[] bytesToSend = new byte[(int) file.length()];
             try {
